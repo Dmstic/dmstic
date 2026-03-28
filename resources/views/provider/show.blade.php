@@ -1,6 +1,26 @@
 @extends('layout')
 @section('title', $provider->icon_html . ' ' . $provider->name)
 @section('content')
+<div class="card mb-3" style="padding:10px 14px">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mu);white-space:nowrap">Okres:</span>
+    <div class="yr-btns" style="margin:0">
+      <a href="/provider/{{ $provider->id }}" class="yr-btn {{ !$yearFilter && !$dateFrom?'act':'' }}">Wszystkie</a>
+      @foreach($availYears as $yr)
+      <a href="/provider/{{ $provider->id }}?year={{ $yr }}" class="yr-btn {{ $yearFilter==$yr?'act':'' }}">{{ $yr }}</a>
+      @endforeach
+    </div>
+    <form method="GET" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0">
+      <input type="hidden" name="type" value="{{ $typeFilter }}">
+      <input type="hidden" name="status" value="{{ $statusFilter }}">
+      <input type="date" name="from" value="{{ $dateFrom }}" style="background:var(--sf2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px 8px;font-size:.78rem">
+      <span style="color:var(--mu);font-size:.78rem">—</span>
+      <input type="date" name="to" value="{{ $dateTo }}" style="background:var(--sf2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px 8px;font-size:.78rem">
+      <button type="submit" class="btn bp" style="padding:4px 10px;font-size:.78rem">OK</button>
+      @if($dateFrom||$dateTo||$yearFilter)<a href="/provider/{{ $provider->id }}" class="btn bg" style="padding:4px 10px;font-size:.78rem">&#x2715;</a>@endif
+    </form>
+  </div>
+</div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
   <div style="font-size:.8rem;color:var(--mu)">
     {{ ucfirst($provider->type) }} &middot; Nr klienta: {{ $provider->client_number }}

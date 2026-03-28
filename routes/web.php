@@ -9,6 +9,8 @@ Route::get("/provider/{id}", [ProviderController::class, "show"])->name("provide
 Route::post("/provider/{id}/quick-update", [ProviderController::class, "updateQuick"])->name("provider.quick-update");
 Route::get("/provider/{id}/edit", [AdminController::class, "editProvider"])->name("provider.edit");
 Route::post("/provider/{id}/edit", [AdminController::class, "updateProvider"]);
+Route::delete("/provider/{id}", [AdminController::class, "deleteProvider"])->name("provider.delete");
+Route::delete("/provider/{id}/bills", [AdminController::class, "deleteProviderBills"])->name("provider.delete-bills");
 Route::get("/admin/provider/create", [AdminController::class, "create"])->name("provider.create");
 Route::post("/admin/provider/create", [AdminController::class, "store"]);
 Route::post("/admin/upload", [AdminController::class, "upload"])->name("admin.upload");

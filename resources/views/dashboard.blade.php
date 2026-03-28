@@ -1,6 +1,24 @@
 @extends('layout')
 @section('title','Przegląd')
 @section('content')
+<div class="card mb-3" style="padding:10px 14px">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mu);white-space:nowrap">Okres:</span>
+    <div class="yr-btns" style="margin:0">
+      <a href="/" class="yr-btn {{ !$year && !$dateFrom?'act':'' }}">Wszystkie</a>
+      @foreach($availYears as $yr)
+      <a href="/?year={{ $yr }}" class="yr-btn {{ $year==$yr?'act':'' }}">{{ $yr }}</a>
+      @endforeach
+    </div>
+    <form method="GET" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0">
+      <input type="date" name="from" value="{{ $dateFrom }}" style="background:var(--sf2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px 8px;font-size:.78rem">
+      <span style="color:var(--mu);font-size:.78rem">—</span>
+      <input type="date" name="to" value="{{ $dateTo }}" style="background:var(--sf2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px 8px;font-size:.78rem">
+      <button type="submit" class="btn bp" style="padding:4px 10px;font-size:.78rem">OK</button>
+      @if($dateFrom||$dateTo||$year)<a href="/" class="btn bg" style="padding:4px 10px;font-size:.78rem">&#x2715;</a>@endif
+    </form>
+  </div>
+</div>
 <div class="sg">
   <div class="sc"><div class="lb">Łączne wydatki</div><div class="vl">{{ number_format($totalCost,0,',',' ') }} PLN</div><div class="sb2">wszystkie dostawcy</div></div>
   <div class="sc"><div class="lb">Łączne zużycie</div><div class="vl">{{ number_format($totalKwh,0,',',' ') }} kWh</div><div class="sb2">energia + gaz</div></div>

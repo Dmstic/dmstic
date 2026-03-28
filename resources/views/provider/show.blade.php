@@ -29,11 +29,36 @@
       <button type="submit" class="btn bp">&#x1F4CE; Wgraj</button>
     </form>
     <div style="margin-top:14px;font-size:.73rem;color:var(--mu)">
-      Dokumenty zapisywane w:<br>
-      <code style="background:var(--sf2);padding:2px 6px;border-radius:4px;font-size:.72rem">storage/documents/{{ $provider->id }}/</code>
+      Dokumenty w: <code style="background:var(--sf2);padding:2px 6px;border-radius:4px;font-size:.72rem">storage/documents/{{ $provider->id }}/</code>
     </div>
   </div>
 </div>
+
+@if(count($documents))
+<div class="card">
+  <div class="ct">&#x1F4C2; Dokumenty ({{ count($documents) }})</div>
+  <div class="doc-grid">
+    @foreach($documents as $doc)
+    <div class="doc-card" onclick="viewDoc('{{ $doc['url'] }}','{{ $doc['ext'] }}','{{ addslashes($doc['name']) }}')">
+      <div class="doc-icon">
+        @if($doc['ext']=='pdf')📄@elseif(in_array($doc['ext'],['jpg','jpeg','png','webp']))🖼️@else📎@endif
+      </div>
+      <div class="doc-name">{{ $doc['name'] }}</div>
+    </div>
+    @endforeach
+  </div>
+  <div id="docViewer" style="display:none;margin-top:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span id="docViewerName" style="font-size:.82rem;color:var(--mu)"></span>
+      <div style="display:flex;gap:8px">
+        <a id="docViewerLink" href="#" target="_blank" class="btn bg" style="font-size:.75rem">&#x1F517; Otwórz</a>
+        <button onclick="closeDoc()" class="btn bg" style="font-size:.75rem">&#x2715; Zamknij</button>
+      </div>
+    </div>
+    <div id="docViewerContent"></div>
+  </div>
+</div>
+@endif
 
 <div class="card" data-tabs>
   <div class="ct">Analizy</div>
@@ -41,6 +66,7 @@
     <button class="tbb act" data-tab="t-cpk">Koszt / kWh</button>
     <button class="tbb" data-tab="t-yoy">Rok do roku</button>
     <button class="tbb" data-tab="t-per">Porównanie okresu</button>
+    <button class="tbb" data-tab="t-fcst">&#x1F52E; Prognoza</button>
   </div>
   <div id="t-cpk" class="tp act">
     <canvas id="cCpk" style="max-height:180px;margin-bottom:12px"></canvas>
@@ -94,10 +120,33 @@
     </tbody></table>
     @endif
   </div>
+  <div id="t-fcst" class="tp">
+    @if(count($forecast))
+    <p style="font-size:.78rem;color:var(--mu);margin-bottom:12px">Prognoza na 6 miesięcy oparta na regresji liniowej danych historycznych (faktury FV).</p>
+    <canvas id="cFcst" style="max-height:200px;margin-bottom:14px"></canvas>
+    <table><thead><tr><th>Miesiąc</th><th class="tr">Prognozowany koszt PLN</th><th>Typ</th></tr></thead><tbody>
+      @foreach($forecast as $f)
+      <tr><td>{{ $f['label'] }}</td><td class="tr">{{ number_format($f['val'],2,',',' ') }}</td><td><span class="b" style="background:rgba(183,148,244,.15);color:#b794f4">Prognoza</span></td></tr>
+      @endforeach
+    </tbody></table>
+    <p style="font-size:.7rem;color:var(--mu);margin-top:12px">&#x26A0; Prognoza ma charakter orientacyjny i opiera się wyłącznie na trendzie historycznym. Nie uwzględnia sezonowości ani zmian cen.</p>
+    @else
+    <p style="color:var(--mu);font-size:.83rem">Za mało danych do wygenerowania prognozy (minimum 3 miesiące faktur FV).</p>
+    @endif
+  </div>
 </div>
 
 <div class="card">
   <div class="ct">Filtruj dokumenty</div>
+  <div style="margin-bottom:10px">
+    <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mu);margin-bottom:4px">Szybki wybór roku</div>
+    <div class="yr-btns">
+      <a href="/provider/{{ $provider->id }}" class="yr-btn {{ !$yearFilter && !$dateFrom?'act':'' }}">Wszystkie</a>
+      @foreach($availYears as $yr)
+      <a href="/provider/{{ $provider->id }}?year={{ $yr }}&type={{ $typeFilter }}&status={{ $statusFilter }}" class="yr-btn {{ $yearFilter==$yr?'act':'' }}">{{ $yr }}</a>
+      @endforeach
+    </div>
+  </div>
   <form method="GET" class="fb">
     <div><label>Data od</label><input type="date" name="from" value="{{ $dateFrom }}"></div>
     <div><label>Data do</label><input type="date" name="to" value="{{ $dateTo }}"></div>
@@ -124,12 +173,15 @@
       <a href="/provider/{{ $provider->id }}" class="btn bg">Reset</a>
     </div>
   </form>
-  <div style="font-size:.76rem;color:var(--mu);margin-bottom:10px">Wyniki: <strong>{{ count($bills) }}</strong> dokumentów</div>
+  <div style="font-size:.76rem;color:var(--mu);margin-bottom:10px">Wyniki: <strong>{{ count($bills) }}</strong> dokumentów
+    @if($yearFilter) &middot; rok: <strong>{{ $yearFilter }}</strong>@endif
+    @if($dateFrom || $dateTo) &middot; zakres: {{ $dateFrom }} – {{ $dateTo }}@endif
+  </div>
   <table>
     <thead><tr>
       <th>Nr dokumentu</th>
       <th class="tip" data-tip="FV=Faktura VAT · FK=Korekta · NO=Nota Odsetkowa · NB=Nota Bankowa">Typ &#x2139;</th>
-      <th>Data</th><th>Termin płatności</th>
+      <th>Data</th><th>Termin</th>
       <th class="tr">Brutto</th><th class="tr">Netto</th><th class="tr">kWh</th><th>Status</th>
     </tr></thead>
     <tbody>
@@ -165,7 +217,26 @@ const m={!! json_encode($monthly) !!},c='{{ $provider->color }}';
 new Chart(document.getElementById('cMonthly'),{type:'bar',data:{labels:m.map(r=>`${r.yr}-${String(r.mo).padStart(2,'0')}`),datasets:[{label:'kWh',data:m.map(r=>r.kwh),backgroundColor:c+'55',borderColor:c,borderWidth:1,borderRadius:3,yAxisID:'y'},{type:'line',label:'PLN',data:m.map(r=>r.total),borderColor:'#f6ad55',backgroundColor:'transparent',tension:.3,pointRadius:3,yAxisID:'y2'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'},title:{display:true,text:'kWh'}},y2:{position:'right',grid:{display:false},title:{display:true,text:'PLN'}}}}});
 const cpk={!! json_encode($costPerKwh->values()) !!};
 if(cpk.length) new Chart(document.getElementById('cCpk'),{type:'line',data:{labels:cpk.map(r=>r.label),datasets:[{label:'PLN/kWh',data:cpk.map(r=>r.val),borderColor:'#f6ad55',backgroundColor:'rgba(246,173,85,.1)',fill:true,tension:.3,pointRadius:3}]},options:{responsive:true,scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'},title:{display:true,text:'PLN/kWh'}}}}});
-// Restore active tab from hash
+const fcst={!! json_encode($forecast) !!},hist={!! json_encode($monthly) !!};
+if(fcst.length && document.getElementById('cFcst')){
+  const hLabels=hist.map(r=>`${r.yr}-${String(r.mo).padStart(2,'0')}`);
+  const hVals=hist.map(r=>r.total);
+  const fLabels=fcst.map(r=>r.label);
+  const fVals=fcst.map(r=>r.val);
+  new Chart(document.getElementById('cFcst'),{type:'line',data:{labels:[...hLabels,...fLabels],datasets:[{label:'Historia PLN',data:[...hVals,...Array(fLabels.length).fill(null)],borderColor:c,backgroundColor:c+'22',fill:true,tension:.3,pointRadius:2},{label:'Prognoza PLN',data:[...Array(hLabels.length-1).fill(null),hVals[hVals.length-1],...fVals],borderColor:'#b794f4',backgroundColor:'rgba(183,148,244,.12)',fill:false,borderDash:[6,3],tension:.3,pointRadius:3}]},options:{responsive:true,scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'},title:{display:true,text:'PLN'}}}}});
+}
+function viewDoc(url,ext,name){
+  const v=document.getElementById('docViewer');
+  const c=document.getElementById('docViewerContent');
+  document.getElementById('docViewerName').textContent=name;
+  document.getElementById('docViewerLink').href=url;
+  if(ext==='pdf') c.innerHTML=`<iframe src="${url}" class="pdf-embed"></iframe>`;
+  else if(['jpg','jpeg','png','webp','gif'].includes(ext)) c.innerHTML=`<img src="${url}" style="max-width:100%;border-radius:8px;border:1px solid var(--bd)">`;
+  else c.innerHTML=`<p style="color:var(--mu);font-size:.82rem">Ten typ pliku (${ext}) nie obsługuje podglądu inline. <a href="${url}" target="_blank" style="color:var(--ac)">Otwórz</a></p>`;
+  v.style.display='block';
+  v.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeDoc(){document.getElementById('docViewer').style.display='none';}
 const h=location.hash.replace('#','');
 if(h){const btn=document.querySelector(`.tbb[data-tab="${h}"]`);if(btn)btn.click();}
 document.querySelectorAll('.tbb').forEach(b=>b.addEventListener('click',()=>location.hash=b.dataset.tab));

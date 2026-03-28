@@ -5,12 +5,12 @@
 <title>@yield('title', 'Dmstic')</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root,[data-theme="dark"]{--bg:#0f1117;--sf:#1a1f2e;--sf2:#16213e;--bd:#2d3748;--tx:#e2e8f0;--mu:#718096;--ac:#63b3ed;--sb:#13151e}
-[data-theme="light"]{--bg:#f0f4f8;--sf:#fff;--sf2:#edf2f7;--bd:#e2e8f0;--tx:#1a202c;--mu:#718096;--ac:#3182ce;--sb:#1a202c}
+:root,[data-theme="dark"]{--bg:#0f1117;--sf:#1a1f2e;--sf2:#16213e;--bd:#2d3748;--tx:#e2e8f0;--mu:#718096;--ac:{{ $appSettings["accent_color"] ?? "#63b3ed" }};--sb:#13151e;--fz:{{ $appSettings["font_size"] ?? "14" }}px}
+[data-theme="light"]{--bg:#f0f4f8;--sf:#fff;--sf2:#edf2f7;--bd:#e2e8f0;--tx:#1a202c;--mu:#718096;--ac:{{ $appSettings["accent_color"] ?? "#3182ce" }};--sb:#1a202c}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);display:flex;flex-direction:column;min-height:100vh}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);display:flex;flex-direction:column;min-height:100vh;font-size:var(--fz)}
 .wrap{display:flex;flex:1}
-.sb{width:220px;background:var(--sb);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0}
+.sb{width:{{ $appSettings["sidebar_width"] ?? "220" }}px;background:var(--sb);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0}
 .sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--bd)}
 .sb-logo a{font-size:1.2rem;font-weight:700;color:var(--ac);text-decoration:none}
 .sb-tag{font-size:.6rem;color:var(--mu);margin-top:2px}
@@ -22,6 +22,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sb-add{padding:7px 14px;font-size:.78rem;color:var(--ac);opacity:.7;text-decoration:none;display:block;transition:opacity .15s}
 .sb-add:hover{opacity:1}
 .sb-foot{padding:10px 0;border-top:1px solid var(--bd)}
+.sb-item{position:relative;display:flex;align-items:center}
+.sb-item a{flex:1}
+.sb-edit-btn{opacity:0;position:absolute;right:8px;background:transparent;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:2px 4px;border-radius:3px;transition:opacity .15s;line-height:1}
+.sb-item:hover .sb-edit-btn{opacity:1}
+.sb-edit-btn:hover{color:var(--tx);background:rgba(255,255,255,.08)}
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
 .mh{padding:14px 26px;border-bottom:1px solid var(--bd);background:var(--sf);display:flex;align-items:center;justify-content:space-between}
 .mh h1{font-size:1.1rem;font-weight:600}
@@ -65,6 +70,24 @@ tr:hover td{background:rgba(255,255,255,.02)}
 form .fg{margin-bottom:12px}
 form .fg label{font-size:.75rem;color:var(--mu);margin-bottom:3px;display:block}
 form .fg input,form .fg select,form .fg textarea{background:var(--sf2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:7px 11px;font-size:.85rem;width:100%}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:22px;min-width:300px;max-width:420px;width:100%}
+.modal h3{font-size:.95rem;font-weight:600;margin-bottom:16px}
+.modal .mfg{margin-bottom:12px}
+.modal .mfg label{font-size:.72rem;color:var(--mu);display:block;margin-bottom:3px}
+.modal .mfg input,.modal .mfg select{background:var(--sf2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:6px 10px;font-size:.82rem;width:100%}
+.modal .mfg input[type=color]{height:36px;padding:2px 4px;cursor:pointer}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.yr-btns{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.yr-btn{padding:3px 9px;border-radius:5px;border:1px solid var(--bd);background:var(--sf2);color:var(--mu);font-size:.72rem;cursor:pointer;text-decoration:none;transition:all .15s}
+.yr-btn:hover,.yr-btn.act{background:var(--ac);color:#fff;border-color:var(--ac)}
+.pdf-embed{width:100%;height:500px;border:1px solid var(--bd);border-radius:8px;margin-top:8px}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:10px}
+.doc-card{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:12px;cursor:pointer;transition:all .15s;text-align:center}
+.doc-card:hover{border-color:var(--ac)}
+.doc-card .doc-icon{font-size:1.8rem;margin-bottom:6px}
+.doc-card .doc-name{font-size:.7rem;color:var(--mu);word-break:break-all}
 @media(max-width:700px){.sb{display:none}.g2{grid-template-columns:1fr}}
 </style>
 </head>
@@ -80,9 +103,12 @@ form .fg input,form .fg select,form .fg textarea{background:var(--sf2);border:1p
     <div class="sb-sec">Dostawcy</div>
     @foreach($sidebarProviders as $p)
     @php $icons=['elec'=>'&#x26A1;','gas'=>'&#x1F525;','water'=>'&#x1F4A7;','net'=>'&#x1F310;','bank'=>'&#x1F3E6;','doc'=>'&#x1F4C4;']; @endphp
-    <a href="/provider/{{ $p->id }}" class="{{ request()->is('provider/'.$p->id) || request()->is('provider/'.$p->id.'/*') ? 'act' : '' }}" style="{{ request()->is('provider/'.$p->id) || request()->is('provider/'.$p->id.'/*') ? 'border-left-color:'.$p->color : '' }}">
-      {!! $icons[$p->icon] ?? '📄' !!} {{ $p->name }}
-    </a>
+    <div class="sb-item">
+      <a href="/provider/{{ $p->id }}" class="{{ request()->is('provider/'.$p->id) || request()->is('provider/'.$p->id.'/*') ? 'act' : '' }}" style="{{ request()->is('provider/'.$p->id) || request()->is('provider/'.$p->id.'/*') ? 'border-left-color:'.$p->color : '' }}">
+        {!! $icons[$p->icon] ?? '📄' !!} {{ $p->name }}
+      </a>
+      <button class="sb-edit-btn" onclick="openEdit({{ $p->id }},'{{ addslashes($p->name) }}','{{ $p->icon }}','{{ $p->color }}')" title="Edytuj">&#x270F;</button>
+    </div>
     @endforeach
     <a href="/admin/provider/create" class="sb-add">&#xFF0B; Dodaj dostawcę</a>
     <div class="sb-sec">System</div>
@@ -99,6 +125,28 @@ form .fg input,form .fg select,form .fg textarea{background:var(--sf2);border:1p
   <footer>Dmstic &copy; 2026</footer>
 </div>
 </div>
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <h3>&#x270F; Edytuj dostawcę</h3>
+    <input type="hidden" id="eId">
+    <div class="mfg"><label>Nazwa</label><input type="text" id="eName"></div>
+    <div class="mfg"><label>Ikona</label>
+      <select id="eIcon">
+        <option value="elec">⚡ Elektryczność</option>
+        <option value="gas">🔥 Gaz</option>
+        <option value="water">💧 Woda</option>
+        <option value="net">🌐 Internet</option>
+        <option value="bank">🏦 Bank</option>
+        <option value="doc">📄 Inne</option>
+      </select>
+    </div>
+    <div class="mfg"><label>Kolor</label><input type="color" id="eColor"></div>
+    <div class="modal-foot">
+      <button class="btn bg" onclick="closeEdit()">Anuluj</button>
+      <button class="btn bp" onclick="saveEdit()">Zapisz</button>
+    </div>
+  </div>
+</div>
 <script>
 document.querySelectorAll(".tbb").forEach(b=>b.addEventListener("click",()=>{
   const g=b.closest("[data-tabs]");
@@ -109,6 +157,21 @@ document.querySelectorAll(".tbb").forEach(b=>b.addEventListener("click",()=>{
 }));
 const saved=localStorage.getItem("theme");
 if(saved) document.documentElement.dataset.theme=saved;
+function openEdit(id,name,icon,color){
+  document.getElementById("eId").value=id;
+  document.getElementById("eName").value=name;
+  document.getElementById("eIcon").value=icon;
+  document.getElementById("eColor").value=color||"#63b3ed";
+  document.getElementById("editModal").classList.add("open");
+}
+function closeEdit(){document.getElementById("editModal").classList.remove("open");}
+async function saveEdit(){
+  const id=document.getElementById("eId").value;
+  const data={name:document.getElementById("eName").value,icon:document.getElementById("eIcon").value,color:document.getElementById("eColor").value,_token:document.querySelector('meta[name=csrf-token]')?.content||""};
+  const r=await fetch(`/provider/${id}/quick-update`,{method:"POST",headers:{"Content-Type":"application/json","X-CSRF-TOKEN":document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1]?.replace(/%3D/g,"=")||"","Accept":"application/json"},body:JSON.stringify(data)});
+  if(r.ok) location.reload(); else alert("Błąd zapisu");
+}
+document.getElementById("editModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeEdit();});
 </script>
 @stack('scripts')
 </body></html>

@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SettingsController;
 Route::get("/", [DashboardController::class, "index"]);
 Route::get("/provider/{id}", [ProviderController::class, "show"])->name("provider.show");
+Route::post("/provider/{id}/quick-update", [ProviderController::class, "updateQuick"])->name("provider.quick-update");
 Route::get("/provider/{id}/edit", [AdminController::class, "editProvider"])->name("provider.edit");
 Route::post("/provider/{id}/edit", [AdminController::class, "updateProvider"]);
 Route::get("/admin/provider/create", [AdminController::class, "create"])->name("provider.create");

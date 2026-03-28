@@ -8,9 +8,10 @@ class SettingsController extends Controller {
         return view("settings", compact("settings"));
     }
     public function update(Request $req) {
-        foreach (["app_name","color_scheme","ai_api_key"] as $k) {
-            if ($req->has($k)) DB::table("settings")->updateOrInsert(["k"=>$k],["v"=>$req->get($k),"updated_at"=>now()]);
+        $keys = ["app_name","color_scheme","ai_api_key","private_repo_token","accent_color","font_size","sidebar_width","border_radius"];
+        foreach ($keys as $key) {
+            if ($req->has($key)) DB::table("settings")->updateOrInsert(["k"=>$key],["v"=>$req->input($key),"updated_at"=>now()]);
         }
-        return back()->with("success","Ustawienia zapisane.");
+        return redirect("/settings")->with("success","Ustawienia zapisane.");
     }
 }

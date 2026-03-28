@@ -9,6 +9,8 @@ class ProviderController extends Controller {
         if (!$provider) abort(404);
         $iconMap = ["elec"=>"⚡","gas"=>"🔥","water"=>"💧","net"=>"🌐","bank"=>"🏦"];
         $provider->icon_html = $iconMap[$provider->icon] ?? "📄";
+        $unitMap = ["electricity"=>"kWh","gas"=>"m³","water"=>"m³","internet"=>"Mb/s","multimedia"=>"pakiet","bank"=>"","other"=>""];
+        $unit = $unitMap[$provider->type] ?? "kWh";
         $dateFrom = $req->get("from");
         $dateTo   = $req->get("to");
         $yearFilter   = $req->get("year");
@@ -34,12 +36,32 @@ class ProviderController extends Controller {
             "avg_monthly" => $fvBase()->avg("amount_gross"),
         ];
         $lastBill = $fvBase()->orderBy("issue_date","desc")->first();
-        // Monthly chart — filtered by date range
+        // Monthly chart — filtered by date range, with MoM trend
         $monthly = $fvBase()
             ->selectRaw("YEAR(issue_date) as yr, MONTH(issue_date) as mo, SUM(amount_gross) as total, SUM(consume_energy) as kwh")
-            ->groupByRaw("yr, mo")->orderByRaw("yr, mo")->get();
+            ->groupByRaw("yr, mo")->orderByRaw("yr, mo")->get()
+            ->map(function($row, $i) use (&$monthly) { $row->trend_pct = null; return $row; }); // placeholder, filled below
+        $monthlyArr = $monthly->values()->all();
+        foreach ($monthlyArr as $i => $row) {
+            $row->trend_pct = $i > 0 && $monthlyArr[$i-1]->total > 0
+                ? round(($row->total - $monthlyArr[$i-1]->total) / $monthlyArr[$i-1]->total * 100, 1)
+                : null;
+        }
+        $monthly = collect($monthlyArr);
         $costPerKwh = $monthly->filter(fn($r)=>$r->kwh>0)
             ->map(fn($r)=>["label"=>sprintf("%04d-%02d",$r->yr,$r->mo),"val"=>round($r->total/$r->kwh,4)])->values();
+        // Payment progress — current calendar month (all time, not date-filtered)
+        $curY = (int)date('Y'); $curM = (int)date('n');
+        $monthFV = DB::table("bills")->where("provider_id",$id)->where("doc_type","FV")->where("is_correction",0)
+            ->whereYear("issue_date",$curY)->whereMonth("issue_date",$curM)->get();
+        $payProgress = [
+            'total'      => $monthFV->sum('amount_gross'),
+            'paid'       => $monthFV->whereIn('status',['Opłacona','Rozliczono'])->sum('amount_gross'),
+            'partial'    => $monthFV->where('status','Część. zapłacona')->sum('amount_gross'),
+            'count'      => $monthFV->count(),
+            'paid_count' => $monthFV->whereIn('status',['Opłacona','Rozliczono'])->count(),
+            'label'      => sprintf('%s %d', ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'][$curM-1], $curY),
+        ];
         // YoY — always all-time (not filtered), to show full comparison table
         $yoyRaw = DB::table("bills")->where("provider_id",$id)->where("doc_type","FV")->where("is_correction",0)
             ->selectRaw("YEAR(issue_date) as yr, MONTH(issue_date) as mo, SUM(amount_gross) as total, SUM(consume_energy) as kwh")
@@ -56,7 +78,7 @@ class ProviderController extends Controller {
         $availYears = DB::table("bills")->where("provider_id",$id)->selectRaw("YEAR(issue_date) as yr")->groupBy("yr")->orderBy("yr")->pluck("yr");
         $forecast = $this->computeForecast($monthly);
         $documents = $this->listDocuments($id);
-        return view("provider.show", compact("provider","bills","monthly","costPerKwh","yoy","years","stats","lastBill","dateFrom","dateTo","yearFilter","typeFilter","statusFilter","docTypes","statuses","availYears","forecast","documents"));
+        return view("provider.show", compact("provider","bills","monthly","costPerKwh","yoy","years","stats","lastBill","dateFrom","dateTo","yearFilter","typeFilter","statusFilter","docTypes","statuses","availYears","forecast","documents","unit","payProgress"));
     }
     private function computeForecast($monthly) {
         // Use PLN data when kWh is 0 (water providers have no kWh)

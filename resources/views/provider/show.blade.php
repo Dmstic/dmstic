@@ -28,17 +28,60 @@
   </div>
   <a href="/provider/{{ $provider->id }}/edit" class="btn bg">&#x270F; Edytuj</a>
 </div>
+@if($payProgress['count'] > 0)
+@php $payPct = $payProgress['total'] > 0 ? round($payProgress['paid'] / $payProgress['total'] * 100) : 0; @endphp
+<div class="card mb-3" style="padding:12px 16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <span style="font-size:.78rem;color:var(--mu)">Płatności — <strong style="color:var(--tx)">{{ $payProgress['label'] }}</strong></span>
+    <span style="font-size:.82rem;font-weight:600;color:{{ $payPct>=100?'#68d391':($payPct>=50?'#f6ad55':'#fc8181') }}">{{ $payPct }}% opłacone</span>
+  </div>
+  <div style="background:var(--sf2);border-radius:99px;height:8px;overflow:hidden">
+    <div style="height:100%;width:{{ $payPct }}%;background:{{ $payPct>=100?'#68d391':($payPct>=50?'#f6ad55':'#fc8181') }};border-radius:99px;transition:width .4s"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:.72rem;color:var(--mu)">
+    <span>{{ $payProgress['paid_count'] }}/{{ $payProgress['count'] }} faktur opłaconych</span>
+    <span>{{ number_format($payProgress['paid'],2,',',' ') }} / {{ number_format($payProgress['total'],2,',',' ') }} PLN</span>
+  </div>
+</div>
+@endif
 <div class="sg">
   <div class="sc"><div class="lb">Łączny koszt</div><div class="vl" style="color:{{ $provider->color }}">{{ number_format($stats['total_cost'],0,',',' ') }} PLN</div><div class="sb2">{{ $stats['count'] }} faktur FV</div></div>
-  <div class="sc"><div class="lb">Łączne zużycie</div><div class="vl">{{ number_format($stats['total_kwh'],0,',',' ') }} kWh</div></div>
+  <div class="sc">
+    <div class="lb">Łączne zużycie</div>
+    <div class="vl">{{ $unit ? number_format($stats['total_kwh'],0,',',' ') : '—' }}</div>
+    <div class="sb2">{{ $unit ?: 'brak pomiaru' }}</div>
+  </div>
   <div class="sc"><div class="lb">Śr. / faktura</div><div class="vl">{{ number_format($stats['avg_monthly'],0,',',' ') }} PLN</div></div>
-  <div class="sc"><div class="lb">Ostatnia faktura</div><div class="vl">{{ $lastBill ? number_format($lastBill->amount_gross,2,',',' ') : '—' }}</div><div class="sb2">{{ $lastBill ? \Carbon\Carbon::parse($lastBill->issue_date)->format('d.m.Y') : '' }}</div></div>
+  <div class="sc">
+    <div class="lb">Ostatnia faktura</div>
+    <div class="vl">{{ $lastBill ? number_format($lastBill->amount_gross,2,',',' ') : '—' }}</div>
+    <div class="sb2">{{ $lastBill ? \Carbon\Carbon::parse($lastBill->issue_date)->format('d.m.Y') : '' }}</div>
+  </div>
 </div>
 
 <div class="g2">
   <div class="card">
     <div class="ct">Zużycie i koszty miesięczne</div>
-    <canvas id="cMonthly" style="max-height:230px"></canvas>
+    <canvas id="cMonthly" style="max-height:220px"></canvas>
+    @php $mLast = $monthly->last(); $mPrev = $monthly->count()>1 ? $monthly->slice(-2,1)->first() : null; @endphp
+    @if($mLast && $mLast->trend_pct !== null)
+    <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+      <div style="background:var(--sf2);border-radius:7px;padding:7px 12px;font-size:.78rem;flex:1;min-width:120px">
+        <div style="color:var(--mu);font-size:.65rem;margin-bottom:2px">{{ sprintf('%04d-%02d',$mLast->yr,$mLast->mo) }} vs poprzedni</div>
+        @php $tc=$mLast->trend_pct; @endphp
+        <span style="font-weight:700;color:{{ $tc>0?'#fc8181':'#68d391' }};font-size:1rem">{{ $tc>0?'↑':'↓' }}</span>
+        <span style="font-weight:600;color:{{ $tc>0?'#fc8181':'#68d391' }}">{{ abs($tc) }}%</span>
+        <span style="color:var(--mu)"> MoM</span>
+      </div>
+      @if($unit)
+      <div style="background:var(--sf2);border-radius:7px;padding:7px 12px;font-size:.78rem;flex:1;min-width:120px">
+        <div style="color:var(--mu);font-size:.65rem;margin-bottom:2px">Ostatni miesiąc</div>
+        <span style="font-weight:600;color:var(--tx)">{{ number_format($mLast->total,2,',',' ') }} PLN</span>
+        @if($mLast->kwh > 0)<span style="color:var(--mu)"> · {{ number_format($mLast->kwh,0,',',' ') }} {{ $unit }}</span>@endif
+      </div>
+      @endif
+    </div>
+    @endif
   </div>
   <div class="card">
     <div class="ct">Wgraj dokument</div>
@@ -202,7 +245,7 @@
       <th>Nr dokumentu</th>
       <th class="tip" data-tip="FV=Faktura VAT · FK=Korekta · NO=Nota Odsetkowa · NB=Nota Bankowa">Typ &#x2139;</th>
       <th>Data</th><th>Termin</th>
-      <th class="tr">Brutto</th><th class="tr">Netto</th><th class="tr">kWh</th><th>Status</th>
+      <th class="tr">Brutto</th><th class="tr">Netto</th><th class="tr">{{ $unit ?: '—' }}</th><th>Status</th>
     </tr></thead>
     <tbody>
       @foreach($bills as $b)

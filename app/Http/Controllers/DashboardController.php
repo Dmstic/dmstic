@@ -34,6 +34,17 @@ class DashboardController extends Controller {
             ->selectRaw("energy_providers.name as pname, energy_providers.icon as picon, energy_providers.color as pcolor, energy_providers.id as pid, bills.doc_number, bills.amount_gross, bills.issue_date, bills.status")
             ->orderBy("bills.issue_date","desc")->limit(10))->get();
         $iconFn = fn($c) => $this->icon($c);
-        return view("dashboard", compact("perProvider","totalCost","totalKwh","labels","datasets","lastBills","iconFn","availYears","year","dateFrom","dateTo"));
+        // Payment progress — current calendar month, all providers
+        $curY = (int)date('Y'); $curM = (int)date('n');
+        $monthFV = DB::table("bills")->where("doc_type","FV")->where("is_correction",0)
+            ->whereYear("issue_date",$curY)->whereMonth("issue_date",$curM)->get();
+        $payProgress = [
+            'total'      => $monthFV->sum('amount_gross'),
+            'paid'       => $monthFV->whereIn('status',['Opłacona','Rozliczono'])->sum('amount_gross'),
+            'count'      => $monthFV->count(),
+            'paid_count' => $monthFV->whereIn('status',['Opłacona','Rozliczono'])->count(),
+            'label'      => sprintf('%s %d', ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'][$curM-1], $curY),
+        ];
+        return view("dashboard", compact("perProvider","totalCost","totalKwh","labels","datasets","lastBills","iconFn","availYears","year","dateFrom","dateTo","payProgress"));
     }
 }

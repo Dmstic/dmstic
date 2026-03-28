@@ -19,6 +19,22 @@
     </form>
   </div>
 </div>
+@if($payProgress['count'] > 0)
+@php $payPct = $payProgress['total'] > 0 ? round($payProgress['paid'] / $payProgress['total'] * 100) : 0; @endphp
+<div class="card mb-3" style="padding:12px 16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <span style="font-size:.78rem;color:var(--mu)">Płatności — <strong style="color:var(--tx)">{{ $payProgress['label'] }}</strong> · wszystkie dostawcy</span>
+    <span style="font-size:.82rem;font-weight:600;color:{{ $payPct>=100?'#68d391':($payPct>=50?'#f6ad55':'#fc8181') }}">{{ $payPct }}% opłacone</span>
+  </div>
+  <div style="background:var(--sf2);border-radius:99px;height:8px;overflow:hidden">
+    <div style="height:100%;width:{{ $payPct }}%;background:{{ $payPct>=100?'#68d391':($payPct>=50?'#f6ad55':'#fc8181') }};border-radius:99px;transition:width .4s"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:.72rem;color:var(--mu)">
+    <span>{{ $payProgress['paid_count'] }}/{{ $payProgress['count'] }} faktur opłaconych</span>
+    <span>{{ number_format($payProgress['paid'],2,',',' ') }} / {{ number_format($payProgress['total'],2,',',' ') }} PLN</span>
+  </div>
+</div>
+@endif
 <div class="sg">
   <div class="sc"><div class="lb">Łączne wydatki</div><div class="vl">{{ number_format($totalCost,0,',',' ') }} PLN</div><div class="sb2">wszystkie dostawcy</div></div>
   <div class="sc"><div class="lb">Łączne zużycie</div><div class="vl">{{ number_format($totalKwh,0,',',' ') }} kWh</div><div class="sb2">energia + gaz</div></div>

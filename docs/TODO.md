@@ -1,196 +1,111 @@
 # Dmstic — TODO List
 
-**Author**: Dariusz Porczyński
-**Updated**: 2026-03-28
-**Project**: Dmstic — Analiza kosztów domowych (Household Cost Analytics)
-
-Items are organised by priority and category. Each item references the version it belongs to.
+**Author:** Dariusz Porczyński
+**Last updated:** 2026-03-28
+**Project:** dmstic (https://dmstic.netol.com → future: dmstic.com)
 
 ---
 
-## Priority: Critical (Blocking v0.2)
+## [CRITICAL — current sprint / v0.3]
 
-### CI/CD — GitHub Actions runner
+These items are blocking or directly requested. Complete before moving to next sprint.
 
-- [ ] Install self-hosted GitHub Actions runner on VM7000 as `dmstic` user
-- [ ] Create `.github/workflows/deploy.yml` in `Dmstic/dmstic`
-  - Trigger: push to `main`
-  - Steps: `git pull`, `composer install --no-dev`, `php artisan config:cache`, `view:cache`, `route:cache`
-- [ ] Register runner with `Dmstic/dmstic` repository token
-- [ ] Test full deploy pipeline end-to-end
-
-### Private Repo — Credentials
-
-- [ ] Set up `porczynski/dmstic` private repo on GitHub
-- [ ] Create `credentials.json` from `credentials.json.example` with real values
-- [ ] Generate GitHub PAT with `repo` scope for runtime fetch
-- [ ] Store PAT in `settings` table via `/settings` page (key: `private_repo_token`)
-- [ ] Implement `CredentialService::fetch()` — GitHub Contents API call + base64 decode + JSON parse
-- [ ] Wire credential service into `TauronScraper` and `OrlenScraper`
+- [ ] **Period filter on top of Przegląd page** — date range picker (from/to), applies to all charts and tables on the overview page
+- [ ] **Period filter on top of each provider page** — same date range picker component, reusable, works independently per provider view
+- [ ] **Provider edit: all fields editable** — editing panel must allow changing: name, type, login, password, API endpoint, account number, notes
+- [ ] **Provider edit: delete provider** — confirmation dialog, removes provider and all associated data from DB
+- [ ] **Provider edit: delete all bills** — option to delete all bill data for a provider without deleting the provider itself
+- [ ] **Update main README.md** — replace Laravel boilerplate with simple deployment instructions; keep technical docs in `docs/README.md`
+- [ ] **MPWiK Wrocław scraper** — implement scraper for https://ebok.mpwik.wroc.pl/trust/pulpit; fetch invoices, parse amounts and dates
+- [ ] **All documentation in English** — migrate all doc files from Polish to English; UI strings remain in lang/ for i18n
 
 ---
 
-## Priority: High (v0.2 Core Features)
+## [HIGH — next sprint / v0.4]
 
-### Document Downloads
+Authentication, multi-tenancy, and admin panel foundation.
 
-- [ ] TAURON PDF download — endpoint: `GET /api/sitecore/EbokArchiveDocuments/GetDocumentImage`
-  - Server was unavailable during initial import — retry
-  - Save PDFs to `storage/app/public/documents/1/{doc_number}.pdf`
-  - Update `bills.file_path` for downloaded files
-- [ ] ORLEN PDF download — requires authenticated session with cookies
-  - Use `OrlenScraper` session to download each invoice PDF
-  - Save to `storage/app/public/documents/2/{doc_number}.pdf`
-
-### Document Viewer
-
-- [ ] Add document list section to `provider/show.blade.php`
-- [ ] Show bills with `file_path` set as clickable entries
-- [ ] Implement inline PDF viewer (iframe pointing to `/storage/documents/{provider_id}/{file}`)
-- [ ] Fallback: download link if inline display fails
-- [ ] Ensure `php artisan storage:link` has been run on VM7000
-
-### Date Filter UX
-
-- [ ] Add quick year-select buttons to filter bar on `/provider/{id}`
-  - Buttons: "2021", "2022", "2023", "2024", "2025"
-  - Clicking a year sets `from=YYYY-01-01&to=YYYY-12-31` and reloads
-- [ ] Highlight active year button when its range matches current filter
-- [ ] Add "All time" / "Clear" button to reset filters
-
-### Sidebar — Inline Editing
-
-- [ ] Add `contenteditable` to provider name in sidebar (click to edit)
-- [ ] Add color picker to color swatch (click to open)
-- [ ] Add icon selector modal (click icon to change)
-- [ ] AJAX endpoint: `POST /admin/provider/{id}/inline-edit` (returns updated values)
-- [ ] Update sidebar DOM without page reload after save
-- [ ] Add route in `routes/web.php`
+- [ ] **Laravel Breeze authentication** — install and configure; registration, login, logout, forgot password, reset password
+- [ ] **Email verification flow** — require verified email before accessing dashboard
+- [ ] **Multi-tenancy: add user_id to all tables** — energy_providers, bills, monthly_summary, documents; global Eloquent scopes
+- [ ] **Data migration: assign existing data to first user** — migration script for existing single-user data
+- [ ] **Gmail SMTP configuration** — configure .env, test delivery; see docs/GMAIL-SMTP-SETUP.md
+- [ ] **WelcomeEmail Mailable** — sent on registration
+- [ ] **EmailVerification Mailable** — custom branded verification email
+- [ ] **PasswordReset Mailable** — custom branded reset email
+- [ ] **Basic admin panel (Filament v3)** — install Filament, create AdminPanelProvider, basic user list
+- [ ] **LLM API key in admin panel** — system_settings table, Filament resource, encrypted storage
+- [ ] **User storage isolation** — per-user file storage at `storage/app/private/users/{user_id}/`
+- [ ] **Subscription plan column on users** — free/pro, enforced via SubscriptionService
 
 ---
 
-## Priority: Medium (v0.2 and v0.3)
+## [MEDIUM — v0.5 sprint]
 
-### Forecasting
+Feature completeness, LLM integration, and full admin panel.
 
-- [ ] Compute linear regression on monthly kWh data (last 12–24 months)
-- [ ] Add forecast data array to `ProviderController@show` (next 3–6 months)
-- [ ] Extend monthly chart with dashed forecast line
-- [ ] Tooltip: distinguish historical vs forecast data points
-- [ ] Display forecast cost estimate (predicted kWh × average cost/kWh)
-
-### Theme Customisation
-
-- [ ] Add `accent_color` setting (hex value, stored in settings)
-- [ ] Apply to CSS custom properties in `layout.blade.php`
-- [ ] Add font selection setting (system-ui, Georgia, monospace)
-- [ ] Preview changes live on settings page (JS)
-
-### AI Document Parsing (v0.3)
-
-- [ ] `POST /admin/upload` — accept PDF file upload
-- [ ] Read file, base64 encode, send to Claude API messages endpoint
-- [ ] Prompt: extract doc_number, doc_type, issue_date, due_date, amount_gross, amount_net, kwh
-- [ ] Return JSON with extracted fields to frontend
-- [ ] Show pre-populated confirmation form
-- [ ] On confirm: `INSERT INTO bills (...)` with extracted + user-corrected values
-- [ ] Store original PDF in `storage/app/public/documents/{provider_id}/`
-- [ ] Handle Claude API errors gracefully (fall back to manual entry)
-
-### Water Provider (v0.3)
-
-- [ ] Research local water utility portal/API
-- [ ] If no API: implement file upload + AI parsing flow
-- [ ] Create `WaterScraper` class (or `WaterImporter` if file-based)
-- [ ] Add provider record via admin UI
-
-### Internet/ISP Provider (v0.3)
-
-- [ ] Research Multimedia Polska or configured ISP portal
-- [ ] Implement scraper or file import
-- [ ] Create `MultimediaScraper` class
-
-### Bank Statements (v0.3)
-
-- [ ] Implement OFX / MT940 / CSV file upload
-- [ ] Parser for each format
-- [ ] AI parsing as fallback for unsupported formats
-- [ ] Map bank transactions to bill records (by amount + date range)
+- [ ] **Multi-language support (en/pl)** — lang/ directory structure, SetLocale middleware, language switcher in header
+- [ ] **User locale in profile** — users can set preferred language; stored in users.locale column
+- [ ] **Filament admin panel: full features** — user management, suspend/delete, subscription changes, audit log
+- [ ] **Subscription tiers enforcement** — Free: 2 providers max, 100 bills max; Pro: unlimited + AI parsing
+- [ ] **LLM document parsing** — PDF text extraction (smalot/pdfparser), LLMService, DocumentUploadJob
+- [ ] **Claude API integration** — Anthropic claude-3-5-sonnet support in LLMService
+- [ ] **OpenAI integration** — optional GPT-4o support in LLMService
+- [ ] **Local Ollama LLM integration** — http://ollama.netol.io:11434 for free parsing (NETOL infra)
+- [ ] **Per-user AI parsing quota** — track monthly usage, enforce Pro-only gate
+- [ ] **Background job: auto-fetch documents** — FetchAllProvidersJob on daily schedule
+- [ ] **Laravel Queue with database driver** — queue worker for emails and scraper jobs
+- [ ] **TAURON PDF auto-download** — background job to download latest invoices from TAURON portal
+- [ ] **ORLEN PDF auto-download** — background job to download from ebok.myorlen.pl
+- [ ] **WeeklyReport email** — optional Pro feature, Sunday 8am scheduled report
+- [ ] **CSV/Excel export** — Pro feature; export bills data to CSV or XLSX
+- [ ] **Provider scraper: plug-in architecture** — config/scrapers.php, ScraperInterface, per-provider implementations
 
 ---
 
-## Priority: Low (v1.0 and future)
+## [LOW / FUTURE — post v1.0]
 
-### Authentication
+Post-launch growth features and infrastructure.
 
-- [ ] Laravel Breeze or Fortify for login/register
-- [ ] Single-user mode (current) → multi-user with per-user data isolation
-- [ ] Admin role for managing providers
-- [ ] Session expiry configuration
-
-### Export
-
-- [ ] CSV export of bills table (with applied filters)
-- [ ] CSV export of monthly summary
-- [ ] PDF report: monthly/annual summary with charts (use Browsershot or dompdf)
-
-### Email Notifications
-
-- [ ] Configure Laravel mail (SMTP settings in settings table)
-- [ ] Alert: new unpaid invoice detected (triggered on import)
-- [ ] Alert: monthly usage exceeds configured threshold
-- [ ] Weekly summary digest (optional)
-
-### Budget Planning
-
-- [ ] `budgets` table: provider_id, year, month, budget_pln
-- [ ] Budget input UI on provider page
-- [ ] Budget vs actual bar chart overlay
-- [ ] Over-budget highlight in monthly stats table
-
-### Mobile Responsiveness
-
-- [ ] Audit all pages for mobile breakpoints
-- [ ] Sidebar: collapse to hamburger menu on small screens
-- [ ] Charts: responsive sizing with Chart.js `responsive: true`
-- [ ] Filter bar: stack vertically on mobile
-
-### API Endpoints
-
-- [ ] `GET /api/providers` — list providers with aggregated totals
-- [ ] `GET /api/providers/{id}/bills` — paginated bills with filters
-- [ ] `GET /api/providers/{id}/monthly` — monthly summary data
-- [ ] API key authentication (stored in settings)
-- [ ] Home Assistant integration documentation
+- [ ] **Migrate to dmstic.com** — DNS change, Cloudflare, HAProxy config update; no app code changes
+- [ ] **Public landing page** — marketing page at dmstic.com with feature overview, pricing, signup CTA
+- [ ] **Stripe/Paddle payment integration** — self-service Pro upgrade; webhooks for plan management
+- [ ] **Mobile app (PWA)** — Progressive Web App manifest, service worker, offline support
+- [ ] **REST API for external integrations** — Laravel Sanctum, API tokens, documented endpoints
+- [ ] **White-label option** — custom branding per account (logo, colors, domain)
+- [ ] **ENEA scraper** — energy provider scraper
+- [ ] **PGNiG/PSG scraper** — gas provider scraper
+- [ ] **ORANGE/PLAY/T-Mobile scraper** — internet/mobile providers
+- [ ] **Veolia/Aquanet water scraper** — water provider
+- [ ] **Two-factor authentication for users** — optional TOTP 2FA in user profile
+- [ ] **Backup system** — automated daily DB backup to S3/B2
+- [ ] **Monitoring & alerting** — Uptime Kuma or similar for dmstic.com health monitoring
+- [ ] **Referral system** — Pro trial for referrals
+- [ ] **Data retention policy UI** — user can set auto-delete old data after N months
+- [ ] **GDPR compliance** — privacy policy page, cookie consent, data export, account deletion
 
 ---
 
-## Technical Debt & Maintenance
+## Completed
 
-- [ ] HAProxy regex bug: `netol.com` without anchor — may match unintended hostnames; discuss with infrastructure team
-- [ ] Add database indexes: `bills.issue_date`, `bills.provider_id`, `bills.doc_type` (review query plan)
-- [ ] Add `bills.deleted_at` for soft deletes (avoid hard deletes on import re-runs)
-- [ ] Artisan command: `dmstic:import {provider}` — proper command class, not ad-hoc script
-- [ ] Artisan command: `dmstic:rebuild-monthly-summary` — for re-aggregation after bulk imports
-- [ ] Add Laravel Telescope for development debugging (dev environment only)
-- [ ] Review and tighten `AppServiceProvider` view composer — N+1 risk on large provider lists
-- [ ] Add `.env.example` to public repo with all required keys documented
-- [ ] PHPStan static analysis at level 5+ (set up in CI/CD)
-- [ ] Basic feature tests: dashboard loads, provider page loads, settings save
-
----
-
-## Documentation
-
-- [x] `docs/README.md` — public documentation (this release)
-- [x] `docs/ROADMAP.md` — versioned feature plan
-- [x] `docs/TODO.md` — this file
-- [x] `docs/CONTRIBUTING.md` — contribution guide
-- [ ] `docs/SCREENSHOTS.md` — application screenshots (v0.2)
-- [ ] `docs/PROVIDERS.md` — per-provider setup guides (TAURON, ORLEN, etc.)
-- [ ] `docs/API.md` — API endpoint reference (v1.0)
+- [x] Laravel deployment on VM7000 (NETOL infra)
+- [x] MySQL schema: energy_providers, bills, monthly_summary
+- [x] TAURON CSV import
+- [x] ORLEN CSV import
+- [x] Dashboard with charts (Chart.js)
+- [x] Analytics: monthly totals, year filter, trends
+- [x] Sidebar navigation with provider links
+- [x] Provider-specific subpages
+- [x] Inline sidebar editing (provider name)
+- [x] Theme customization (dark/light/system)
+- [x] Forecast tab (linear regression from historical data)
+- [x] Document viewer (PDF embed)
+- [x] CI/CD: GitHub Actions + self-hosted runner on VM7000
+- [x] Private repo credentials handling
+- [x] HAProxy 503 fix
+- [x] Year filter on overview and provider pages
+- [x] Footer simplified to "Dmstic © 2026"
 
 ---
 
-**Author**: Dariusz Porczyński
-**Last updated**: 2026-03-28
+*Maintained by Dariusz Porczyński*

@@ -7,24 +7,17 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Deploy Laravel app
+      - name: Pull and deploy
         run: |
-          set -e
-          APP_DIR="/data/home/dmstic/app"
-          cd "$APP_DIR"
+          cd /data/home/dmstic/app
           git pull origin main
           composer install --no-dev --optimize-autoloader --quiet
           php artisan config:cache
           php artisan view:cache
           php artisan route:cache
-          echo "Deploy complete: $(date)"
+          echo "Deploy OK: $(date)"
 
-      - name: Verify app is up
-        run: curl -sf https://dmstic.netol.com/ -o /dev/null && echo "OK: app responding" || echo "WARN: app not responding"
+      - name: Health check
+        run: curl -sf https://dmstic.netol.com/ -o /dev/null && echo "app OK" || echo "WARN app not responding"

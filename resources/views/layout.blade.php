@@ -11,9 +11,11 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);display:flex;flex-direction:column;min-height:100vh;font-size:var(--fz)}
 .wrap{display:flex;flex:1}
 .sb{width:{{ $appSettings["sidebar_width"] ?? "220" }}px;background:var(--sb);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0}
-.sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--bd)}
-.sb-logo a{font-size:1.2rem;font-weight:700;color:var(--ac);text-decoration:none}
-.sb-tag{font-size:.6rem;color:var(--mu);margin-top:2px}
+.sb-logo{padding:14px 16px 12px;border-bottom:1px solid var(--bd)}
+.sb-logo a{display:flex;align-items:center;gap:8px;text-decoration:none}
+.sb-logo img{height:32px;width:auto;object-fit:contain}
+.sb-logo .sb-logo-txt{font-size:1.2rem;font-weight:700;color:var(--ac)}
+.sb-tag{font-size:.6rem;color:var(--mu);margin-top:3px}
 .sb-nav{flex:1;padding:6px 0;overflow-y:auto}
 .sb-nav a{display:flex;align-items:center;gap:8px;padding:8px 14px;color:var(--mu);text-decoration:none;font-size:.85rem;border-left:3px solid transparent;transition:all .15s}
 .sb-nav a:hover{color:var(--tx);background:rgba(255,255,255,.04)}
@@ -24,9 +26,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sb-foot{padding:10px 0;border-top:1px solid var(--bd)}
 .sb-item{position:relative;display:flex;align-items:center}
 .sb-item a{flex:1}
-.sb-edit-btn{opacity:0;position:absolute;right:8px;background:transparent;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:2px 4px;border-radius:3px;transition:opacity .15s;line-height:1}
-.sb-item:hover .sb-edit-btn{opacity:1}
-.sb-edit-btn:hover{color:var(--tx);background:rgba(255,255,255,.08)}
+.sb-edit-btn{opacity:0;position:absolute;right:6px;background:transparent;border:1px solid transparent;color:var(--mu);cursor:pointer;font-size:1rem;padding:3px 7px;border-radius:5px;transition:all .15s;line-height:1;text-decoration:none}
+.sb-item:hover .sb-edit-btn{opacity:1;border-color:var(--bd)}
+.sb-edit-btn:hover{color:var(--ac);background:rgba(99,179,237,.1);border-color:var(--ac)}
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
 .mh{padding:14px 26px;border-bottom:1px solid var(--bd);background:var(--sf);display:flex;align-items:center;justify-content:space-between}
 .mh h1{font-size:1.1rem;font-weight:600}
@@ -95,7 +97,10 @@ form .fg input,form .fg select,form .fg textarea{background:var(--sf2);border:1p
 <div class="wrap">
 <aside class="sb">
   <div class="sb-logo">
-    <a href="/">{{ $appSettings['app_name'] ?? 'Dmstic' }}</a>
+    <a href="/">
+      <img src="/images/dmstic-logo.png" alt="dmstic" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+      <span class="sb-logo-txt" style="display:none">{{ $appSettings['app_name'] ?? 'Dmstic' }}</span>
+    </a>
     <div class="sb-tag">Analiza kosztów domowych</div>
   </div>
   <nav class="sb-nav">
@@ -107,7 +112,7 @@ form .fg input,form .fg select,form .fg textarea{background:var(--sf2);border:1p
       <a href="/provider/{{ $p->id }}" class="{{ request()->is('provider/'.$p->id) || request()->is('provider/'.$p->id.'/*') ? 'act' : '' }}" style="{{ request()->is('provider/'.$p->id) || request()->is('provider/'.$p->id.'/*') ? 'border-left-color:'.$p->color : '' }}">
         {!! $icons[$p->icon] ?? '📄' !!} {{ $p->name }}
       </a>
-      <button class="sb-edit-btn" onclick="openEdit({{ $p->id }},'{{ addslashes($p->name) }}','{{ $p->icon }}','{{ $p->color }}')" title="Edytuj">&#x270F;</button>
+      <a href="/provider/{{ $p->id }}/edit" class="sb-edit-btn" title="Edytuj dostawcę">&#x270F;</a>
     </div>
     @endforeach
     <a href="/admin/provider/create" class="sb-add">&#xFF0B; Dodaj dostawcę</a>

@@ -175,4 +175,3 @@ document.getElementById("editModal").addEventListener("click",e=>{if(e.target===
 </script>
 @stack('scripts')
 </body></html>
-{{-- CI/CD test --}}
